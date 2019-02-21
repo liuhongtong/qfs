@@ -123,7 +123,7 @@ public:
         QCASSERT(theIdx > 0);
         mFreeCnt--;
         *mFreeListPtr = mFreeListPtr[theIdx];
-        return (mStartPtr + ((theIdx - 1) << mBufSizeShift));
+        return (mStartPtr + (size_t(theIdx - 1) << mBufSizeShift));
     }
 
     bool Put(char* inPtr)
