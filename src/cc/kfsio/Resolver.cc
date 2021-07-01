@@ -46,6 +46,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <execinfo.h>
 
 #ifndef QFS_OMIT_EXT_DNS_RESOLVER
 extern "C" {
@@ -89,6 +90,7 @@ public:
     {
         inRequest.mStartUsec = mNetManager.NowUsec();
         if (! mRunFlag) {
+            fprintf(stdout, "QFS: Enqueue return invalid\n");
             return -EINVAL;
         }
         if (Find(inRequest)) {
@@ -341,6 +343,7 @@ public:
     virtual int Start()
     {
         if (mRunFlag) {
+            fprintf(stdout, "QFS: start return invalid\n");
             return -EINVAL;
         }
         mRunFlag = true;
@@ -349,6 +352,19 @@ public:
         mThread.Start(this, kStackSize, "Resolver");
         return 0;
     }
+    void print_stacktrace()
+    {
+        int size = 16;
+        void * array[16];
+        int stack_num = backtrace(array, size);
+        char ** stacktrace = backtrace_symbols(array, stack_num);
+        for (int i = 0; i < stack_num; ++i)
+        {
+            fprintf(stdout, stacktrace[i], "\n");
+        }
+        free(stacktrace);
+    }
+
     virtual void Shutdown()
     {
         QCStMutexLocker theLock(mMutex);
@@ -356,6 +372,7 @@ public:
             return;
         }
         mRunFlag = false;
+        print_stacktrace();
         mCondVar.Notify();
         theLock.Unlock();
         mThread.Join();
@@ -369,6 +386,7 @@ public:
             ((int64_t)inTimeout * 1000 * 1000);
         QCStMutexLocker theLock(mMutex);
         if (! mRunFlag) {
+            fprintf(stdout, "QFS: EnqueueSelf return invalid\n");
             return -EINVAL;
         }
         const bool theWakeFlag = mQueue.IsEmpty();

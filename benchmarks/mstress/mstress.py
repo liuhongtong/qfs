@@ -209,6 +209,7 @@ def RunMStressMasterTest(opts, hostsList, test):
 
   for client in hostsList:
     slaveLogfile = opts.plan + '_' + client + '_' + test + '_' + opts.filesystem + '.slave.log'
+    print("slaveLogfile %s" % slaveLogfile)
     p = subprocess.Popen(['/usr/bin/ssh', client,
                           '%s -c %s -k %s >& %s' % (ssh_cmd, client, clientHostMapping[client], slaveLogfile)],
                          stdout=subprocess.PIPE,
@@ -407,7 +408,7 @@ def SetGlobalPaths(opts):
     Globals.SERVER_CMD = Globals.KFS_SERVER_CMD
     Globals.SERVER_KEYWORD = Globals.KFS_SERVER_KEYWORD
   elif opts.filesystem == 'hdfs':
-    Globals.CLIENT_PATH = 'java -Xmx256m -jar %s/mstress.jar' % mydir
+    Globals.CLIENT_PATH = '/data/opt/jdk/current/bin/java -Xmx256m -jar %s/mstress.jar' % mydir
     Globals.SERVER_CMD = Globals.HDFS_SERVER_CMD
     Globals.SERVER_KEYWORD = Globals.HDFS_SERVER_KEYWORD
   else:

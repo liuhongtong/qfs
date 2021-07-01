@@ -29,6 +29,7 @@
 #include <math.h>
 #include <string.h>
 #include <sys/time.h>
+#include <errno.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -36,7 +37,7 @@
 #include <vector>
 #include <queue>
 #include <algorithm>
-
+#include <sys/fcntl.h>
 using namespace std;
 
 #include "libclient/KfsClient.h"
@@ -321,6 +322,44 @@ long TimeDiffMilliSec(struct timeval* alpha, struct timeval* zigma)
   return diff < 0 ? 0 : diff;
 }
 
+int TestWrite(Client* client, AutoCleanupKfsClient* kfs) {
+    KFS::KfsClient* kfsClient = kfs->GetClient();
+    int kfsFd = kfsClient->Open(client->path_.String(),  O_CREAT|O_RDWR, "");
+    if (kfsFd < 0) {
+        fprintf(logFile, "Open(%s) failed with rc=%d\n", client->path_.String(), kfsFd);
+        return kfsFd;
+    }
+    string srcPath = "/home/hadoop/qfs/benchmarks/mstress/testfile";
+    int srcFd = open(srcPath.c_str(), O_RDONLY);
+    if (srcFd  < 0) {
+        fprintf(logFile, "open(%s) failed with rc=%d\n", srcPath.c_str(), srcFd);
+        return srcFd;
+    }
+    ssize_t nRead;
+    ssize_t rBuffSize = (8 << 20);
+    char *readBuf = new char[rBuffSize];
+    ssize_t offset = 0;
+    while ((nRead = read(srcFd, readBuf, rBuffSize)) > 0) {
+        for (char *p = readBuf, * const e = p + nRead; p < e; ) {
+            int res = kfsClient->PWrite(kfsFd, offset, p, e - p);
+            if (res <= 0) {
+                fprintf(logFile, "write(%s) failed with rc=%d\n", client->path_.String(), res);
+                close(srcFd);
+                kfsClient->Close(kfsFd);
+                return res;
+            }
+            kfsClient->Sync(kfsFd);
+            p += res;
+            offset += res;
+        }
+    }
+
+    close(srcFd);
+    kfsClient->Close(kfsFd);
+    fprintf(logFile, "write success\n");
+    return 0;
+}
+
 
 int CreateDFSPaths(Client* client, AutoCleanupKfsClient* kfs, int level, int* createdCount)
 {
@@ -361,11 +400,14 @@ int CreateDFSPaths(Client* client, AutoCleanupKfsClient* kfs, int level, int* cr
         fprintf(logFile, "Create(%s) failed with rc=%d\n", client->path_.String(), rc);
         return rc;
       }
+      kfsClient->Close(rc);
       (*createdCount)++;
       if (*createdCount > 0 && (*createdCount) % COUNT_INCR == 0) {
         fprintf(logFile, "Created paths so far: %d\n", *createdCount);
       }
     }
+    TestWrite(client, kfs);
+    
     client->path_.Pop(name);
   }
   return 0;

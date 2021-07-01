@@ -39,5 +39,7 @@
             conf="compile->master; runtime->runtime,master" />
         <dependency org="org.apache.hadoop" name="hadoop-hdfs" rev="${hadoop.build.version}"
             conf="compile->master; runtime->runtime,master" />
+        <dependency org="org.apache.hadoop" name="hadoop-hdfs-client" rev="${hadoop.build.version}"
+            conf="compile->master; runtime->runtime,master" />
     </dependencies>
 </ivy-module>

@@ -301,7 +301,7 @@ public class MStress_Client
         }
       } else {
         try {
-          dfsClient_.create(path, true);
+          dfsClient_.create(path, true).close();
           totalCreateCount ++;
           if (totalCreateCount % COUNT_INCR == 0) {
             System.out.printf("Created paths so far: %d\n", totalCreateCount);

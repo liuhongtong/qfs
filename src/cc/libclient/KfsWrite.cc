@@ -216,7 +216,7 @@ KfsClientImpl::WriteSelf(int fd, const char* buf, size_t numBytes,
     }
     lock.Unlock();
 
-    KFS_LOG_STREAM_DEBUG <<
+    KFS_LOG_STREAM_INFO <<
         fd << "," << fileId << "," << fileInstance << "," << pathName <<
         (asyncFlag  ? " async" : "") <<
         (appendFlag ? " append ->" : " write ->") <<
